@@ -116,6 +116,8 @@ void main() {
 		lcd.comm(0x2C, 1);
 		lcd.comm(0x28, 50);*/
 
+
+	/*
 	lcd.wait(2000000);
 		lcd.comm('A', 1000000);
 	lcd.comm('B');
@@ -130,7 +132,7 @@ void main() {
 	lcd.comm('K');
 		lcd.comm('L', 1);
 		lcd.comm('M', 50);
-
+*/
 	//ser.print("Gotovo!\n");
 
 	while(1);

@@ -15,29 +15,47 @@
 extern Usart2 ser;
 
 class Lcd1602 : public TimerCallback, public IICCallback {
-	static const unsigned SZ = 256;
-	static const int delay_1 = 500;
-	static const int delay_retry = 25;
-	enum State {READY, PREPARED, RETRY, SENDING, TIMEOUT};
+	static const unsigned BIT_E = 4;
+
+	static const unsigned SZ = 1024;
+	static const int DELAY_1 = 1;
+	static const int DELAY_50 = 50;
+	static const int DELAY_RETRY = 25;
+public:
+	enum State {READY, TIMEOUT, SENDING, RETRY, MAX = 0x1F};
+private:
 	Timer2 tim;
+
 	uint32_t queue[SZ];
 	uint32_t front, back;
+
 	State status;
-	uint16_t delay;
-	char byte;
-	//bool active;
-	uint32_t& move(uint32_t& p) {if (++p == SZ) p = 0; return p;}
-	void push(uint32_t c) {queue[back] = c; move(back);}
+
+	uint32_t b_command;
+	uint16_t b_delay;
+	char b_byte;
+
+	void init();
+	uint32_t& move_ptr(uint32_t& p) {if (++p == SZ) p = 0; return p;}
+	void push(uint32_t c) {queue[back] = c; move_ptr(back);}
 	uint32_t pop()
-		{if (back == front) return 0; uint32_t tmp = queue[front]; move(front); return tmp;}
+		{if (back == front) return 0; uint32_t tmp = queue[front]; move_ptr(front); return tmp;}
 	bool prepare();
+	void loadbuf();
 	void write();
 	void transmit();
+	//State& State::operator--(State& s, int) { return s = State(int(s)--); }
+	//State& State::operator-=(State& s, int i) { return s = State(int(s) - i); }
+	friend State& operator--(State& s, int) { return s = State(int(s) - 1); }
+	friend State& operator-=(State& s, int i) { return s = State(int(s) - i); }
+	friend State& operator|=(State& s, int i) { return s = State(int(s) | i); }
+	void comm(char c, unsigned mks, int laps = 6)
+		{push(c | ((mks & 0xFFFF) << 8) | ((--laps & 7) << 24)); transmit();}
 public:
-	Lcd1602() : tim(this), front(0), back(0), status(READY), delay(0), byte(0)/*, active(false)*/
-		{i2c.setCallback(this);}
-	void wait(int mks) {mks *= 3; while(--mks);}
-	void comm(char c, unsigned mks = 50) {push(c | (mks << 8)); transmit();}
+	Lcd1602() : tim(this), front(0), back(0), status(READY), b_command(0), b_delay(0), b_byte(0)
+		{i2c.setCallback(this); init();}
+	void wait(int mks) {comm(0, mks, 1);}
+	void command(char c, unsigned mks = 50) {comm(c, mks);}
 	void timerCallback();
 	void iicCallback();
 };

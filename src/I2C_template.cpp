@@ -40,7 +40,7 @@ bool I2C1::send(char d) {
 	sdata = d;
 	prep_act();
 	ser.print('\n');
-	ser.print((regs->SR1 & IIC_SB) ? '<' : '>');	ser.print(d);//
+	ser.print((regs->SR1 & IIC_SB) ? '<' : '>');	//ser.print(d);//
 	//	interrupts enable: move from
 	regs->CR1 |= IIC_START;
 	ser.print('S');//..
